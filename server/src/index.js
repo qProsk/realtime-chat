@@ -6,11 +6,7 @@ const cors = require("cors");
 const app = express();
 const server = http.createServer(app);
 
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-  })
-);
+app.use(cors());
 
 app.get("/", (req, res) => {
   res.send("Chat server running");
@@ -18,7 +14,7 @@ app.get("/", (req, res) => {
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });

@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import ChatHeader from "./components/ChatHeader";
+import ChatMessages from "./components/ChatMessages";
+import ChatInput from "./components/ChatInput";
 
-const socket = io("http://localhost:5000");
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!);
 
 type ChatMessage = {
   user: string;
@@ -16,6 +19,7 @@ export default function Home() {
   const [joined, setJoined] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     socket.on("receive_message", (data: ChatMessage) => {
@@ -26,6 +30,10 @@ export default function Home() {
       socket.off("receive_message");
     };
   }, []);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const joinChat = () => {
     if (!username.trim()) return;
@@ -49,72 +57,103 @@ export default function Home() {
   };
 
   if (!joined) {
-    return (
-      <div style={{ padding: 40, maxWidth: 500, margin: "0 auto" }}>
-        <h1>Join Chat</h1>
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f3f4f6",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 500,
+          background: "white",
+          borderRadius: 12,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+          padding: 24,
+          border: "1px solid #e5e7eb",
+        }}
+      >
+        <h1 style={{ margin: 0, marginBottom: 16 }}>Join Chat</h1>
+
         <div style={{ display: "flex", gap: 8 }}>
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                joinChat();
+              }
+            }}
             placeholder="Your name..."
-            style={{ flex: 1, padding: 10 }}
+            style={{
+              flex: 1,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              outline: "none",
+            }}
           />
-          <button onClick={joinChat} style={{ padding: "10px 16px" }}>
+          <button
+            onClick={joinChat}
+            style={{
+              padding: "12px 18px",
+              borderRadius: 8,
+              border: "none",
+              background: "#4f46e5",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
             Join
           </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
-    <div style={{ padding: 40, maxWidth: 700, margin: "0 auto" }}>
-      <h1>Realtime Chat</h1>
-      <p>
-        Logged in as: <strong>{username}</strong>
-      </p>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f3f4f6",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 850,
+          height: "80vh",
+          background: "white",
+          borderRadius: 12,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        <ChatHeader username={username} />
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        <input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Write message..."
-          style={{ flex: 1, padding: 10 }}
+        <ChatMessages
+          messages={messages}
+          username={username}
+          bottomRef={bottomRef}
         />
-        <button onClick={sendMessage} style={{ padding: "10px 16px" }}>
-          Send
-        </button>
-      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {messages.map((msg, i) => {
-          const isMe = msg.user === username;
-
-          return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                justifyContent: isMe ? "flex-end" : "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  padding: 10,
-                  background: isMe ? "#4f46e5" : "#e5e5e5",
-                  color: isMe ? "white" : "black",
-                  borderRadius: 8,
-                  maxWidth: "70%",
-                }}
-              >
-                <div style={{ fontWeight: "bold" }}>
-                  {msg.user} ({msg.time})
-                </div>
-                <div>{msg.message}</div>
-              </div>
-            </div>
-          );
-        })}
+        <ChatInput
+          message={message}
+          setMessage={setMessage}
+          sendMessage={sendMessage}
+        />
       </div>
     </div>
   );
